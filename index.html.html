@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة الهداية التعليمية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Cairo',sans-serif; background:#F0F4F8; min-height:100vh; color:#1a1a2e; }
+
+/* ---- FLASH OVERLAY ---- */
+#flashOverlay {
+  position:fixed; inset:0; z-index:9999; pointer-events:none;
+  opacity:0; transition:opacity 0.15s;
+}
+#flashOverlay.green { background:rgba(76,175,80,0.45); }
+#flashOverlay.red   { background:rgba(198,40,40,0.40); }
+#flashOverlay.show  { opacity:1; }
+
+/* ---- MOTIVATIONAL POPUP ---- */
+#motivePop {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.5);
+  z-index:8888; pointer-events:none; opacity:0;
+  transition:all 0.3s cubic-bezier(.34,1.56,.64,1);
+  text-align:center;
+}
+#motivePop.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+#motivePop .motive-inner {
+  background:linear-gradient(135deg,#1B5E20,#43A047);
+  color:white; padding:30px 40px; border-radius:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.35);
+}
+#motivePop .motive-emoji { font-size:64px; display:block; margin-bottom:10px; }
+#motivePop .motive-text  { font-size:26px; font-weight:900; }
+
+.header { background:linear-gradient(135deg,#1B5E20,#2E7D32); color:white; padding:35px 20px; text-align:center; }
+.header h1 {
+  font-size:42px; font-weight:900; margin-bottom:6px;
+  opacity:0;
+  animation: titlePopIn 0.9s cubic-bezier(.34,1.56,.64,1) 0.1s forwards;
+}
+@keyframes titlePopIn {
+  0%   { opacity:0; transform: scale(0.6) translateY(-20px); }
+  100% { opacity:1; transform: scale(1) translateY(0); }
+}
+.header p  { font-size:15px; opacity:.85; }
+.header .credit {
+  font-size:19px;
+  font-weight:700;
+  opacity:0;
+  margin-top:10px;
+  letter-spacing:1px;
+  background: linear-gradient(90deg, #fff, #F9A825, #fff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: creditFadeIn 1.2s ease 0.4s forwards, creditShine 3s linear 1.6s infinite;
+}
+@keyframes creditFadeIn {
+  0%   { opacity:0; transform: translateY(12px); }
+  100% { opacity:1; transform: translateY(0); }
+}
+@keyframes creditShine {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.tabs { display:flex; justify-content:center; gap:15px; padding:20px; flex-wrap:wrap; }
+.tabs button { padding:11px 28px; border:none; background:white; color:#666; border-radius:50px; cursor:pointer; font-weight:700; font-family:'Cairo',sans-serif; box-shadow:0 4px 20px rgba(0,0,0,.09); transition:all .3s; }
+.tabs button.active { background:#F9A825; color:white; transform:translateY(-2px); box-shadow:0 6px 25px rgba(249,168,37,.4); }
+.tabs button:hover:not(.active) { transform:translateY(-2px); color:#2E7D32; }
+
+.container { max-width:1120px; margin:0 auto; padding:30px 20px; }
+.section { display:none; }
+.section.active { display:block; }
+
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:18px; margin-bottom:30px; }
+.card { background:white; padding:28px 20px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,.09); cursor:pointer; text-align:center; transition:all .3s; border:3px solid transparent; }
+.card:hover { transform:translateY(-8px); box-shadow:0 10px 35px rgba(0,0,0,.16); border-color:#2E7D32; }
+.card-icon  { font-size:46px; margin-bottom:12px; }
+.card-title { font-size:17px; font-weight:700; color:#2E7D32; margin-bottom:6px; }
+.card-sub   { font-size:12px; color:#999; }
+
+.form-group { margin-bottom:18px; }
+.form-group label { display:block; font-weight:700; margin-bottom:7px; color:#333; }
+.form-group input,.form-group textarea,.form-group select {
+  width:100%; padding:11px 13px; border:2px solid #ddd; border-radius:10px;
+  font-family:'Cairo',sans-serif; font-size:14px; transition:border .2s;
+}
+.form-group input:focus,.form-group textarea:focus { outline:none; border-color:#2E7D32; }
+
+.btn { padding:11px 22px; border:none; background:#2E7D32; color:white; border-radius:10px; cursor:pointer; font-weight:700; font-family:'Cairo',sans-serif; transition:all .3s; font-size:14px; }
+.btn:hover { background:#1B5E20; transform:translateY(-2px); }
+.btn-danger { background:#C62828; }
+.btn-danger:hover { background:#921E1E; }
+.btn-yellow { background:#F9A825; }
+.btn-yellow:hover { background:#F57F17; }
+
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.modal.active { display:flex; }
+.modal-content { background:white; padding:36px; border-radius:20px; max-width:620px; width:95%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:popIn .3s ease; position:relative; }
+@keyframes popIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+.close-modal { position:absolute; top:14px; left:14px; background:none; border:none; font-size:26px; cursor:pointer; color:#aaa; }
+.close-modal:hover { color:#C62828; }
+
+.progress-bar  { height:7px; background:#eee; border-radius:10px; margin-bottom:18px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,#2E7D32,#4CAF50); transition:width .3s; }
+
+.question-text { font-size:19px; font-weight:700; text-align:center; margin:22px 0; color:#1a1a2e; line-height:1.6; }
+
+.options { display:flex; flex-direction:column; gap:11px; margin:18px 0; }
+.option { padding:14px; border:2px solid #e0e0e0; background:white; border-radius:10px; cursor:pointer; text-align:right; font-weight:600; transition:all .2s; font-family:'Cairo',sans-serif; font-size:14px; }
+.option:hover  { border-color:#2E7D32; background:#f0f8f4; }
+.option.selected { border-color:#F9A825; background:#fffbf0; }
+.option.correct  { border-color:#4CAF50; background:#e8f5e9; color:#2E7D32; }
+.option.wrong    { border-color:#C62828; background:#ffebee; color:#921E1E; }
+
+.toast { position:fixed; bottom:20px; right:20px; padding:14px 24px; background:white; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.2); z-index:2000; font-weight:700; animation:slideIn .3s ease; font-size:14px; }
+@keyframes slideIn { from{transform:translateX(400px);opacity:0} to{transform:translateX(0);opacity:1} }
+.toast.success { border-left:5px solid #4CAF50; }
+.toast.error   { border-left:5px solid #C62828; }
+
+.result { padding:14px; border-radius:10px; margin:18px 0; text-align:center; font-weight:700; font-size:15px; }
+.result.success { background:#e8f5e9; color:#2E7D32; }
+.result.error   { background:#ffebee; color:#921E1E; }
+
+.score-display  { background:linear-gradient(135deg,#1B5E20,#2E7D32); color:white; padding:28px; border-radius:15px; text-align:center; margin:20px 0; }
+.score-number   { font-size:52px; font-weight:900; }
+.score-label    { font-size:15px; opacity:.9; margin-top:8px; }
+
+/* Question list items */
+.q-item { background:white; padding:16px 18px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:12px; display:flex; align-items:center; gap:12px; border-right:4px solid #2E7D32; }
+.q-item-text { flex:1; font-weight:600; font-size:14px; color:#333; line-height:1.5; }
+.q-item-type { font-size:11px; color:#888; margin-top:3px; }
+
+.stats { background:white; padding:20px; border-radius:12px; margin:20px 0; }
+.stat-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee; }
+.stat-row:last-child { border-bottom:none; }
+.stat-label { font-weight:700; font-size:14px; }
+.stat-value { color:#2E7D32; font-weight:700; }
+
+/* Image upload preview */
+@keyframes particleFly {
+  0%   { opacity:0; transform:scale(0) rotate(0deg); }
+  20%  { opacity:1; }
+  100% { opacity:0; transform:scale(1.2) rotate(360deg) translateY(-40px); }
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
+}
+.img-preview { width:100%; max-height:200px; object-fit:contain; border-radius:10px; margin-top:10px; border:2px solid #ddd; display:none; }
+</style>
+</head>
+<body>
+
+<!-- Flash overlay -->
+<div id="flashOverlay"></div>
+<!-- Motivational popup -->
+<div id="motivePop"><div class="motive-inner"><span class="motive-emoji" id="motiveEmoji">🌟</span><div class="motive-text" id="motiveText">رائع!</div></div></div>
+
+<!-- Student Name Modal -->
+<div id="studentNameModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:white;padding:40px 36px;border-radius:24px;max-width:420px;width:92%;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,0.35);animation:popIn .35s cubic-bezier(.34,1.56,.64,1);">
+    <div style="font-size:64px;margin-bottom:12px;">👨‍🎓</div>
+    <h2 style="color:#1B5E20;font-size:22px;font-weight:900;margin-bottom:8px;">أهلاً بك في منصة الهداية!</h2>
+    <p style="color:#777;font-size:14px;margin-bottom:24px;">من فضلك أدخل اسمك لنبدأ الرحلة التعليمية 🌟</p>
+    <input type="text" id="studentNameInput" placeholder="اكتب اسمك هنا..." 
+      style="width:100%;padding:13px 16px;border:2px solid #ddd;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;text-align:center;margin-bottom:18px;transition:border .2s;outline:none;"
+      onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#ddd'">
+    <button onclick="confirmStudentName()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1B5E20,#43A047);color:white;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .3s;">
+      ✅ موافق — ابدأ التعلم!
+    </button>
+  </div>
+</div>
+
+<!-- Welcome Animation Overlay -->
+<div id="welcomeAnim" style="display:none;position:fixed;inset:0;z-index:9500;pointer-events:none;align-items:center;justify-content:center;overflow:hidden;background:rgba(27,94,32,0.85);">
+  <div id="welcomeAnimInner" style="text-align:center;opacity:0;transform:scale(0.5);transition:all 0.6s cubic-bezier(.34,1.56,.64,1);">
+    <div style="font-size:60px;margin-bottom:10px;">🎉</div>
+    <div style="font-family:'Cairo',sans-serif;font-size:16px;color:rgba(255,255,255,0.85);margin-bottom:6px;font-weight:600;">مرحباً</div>
+    <div id="welcomeName" style="font-family:'Cairo',sans-serif;font-size:44px;font-weight:900;color:white;text-shadow:0 4px 30px rgba(0,0,0,0.4);"></div>
+    <div style="font-family:'Cairo',sans-serif;font-size:17px;color:rgba(255,255,255,0.9);margin-top:10px;font-weight:600;">يسعدنا وجودك معنا! 🌟</div>
+  </div>
+  <div id="particlesContainer" style="position:absolute;inset:0;pointer-events:none;"></div>
+</div>
+
+<div class="header">
+  <h1>🎓 منصة الهداية التعليمية</h1>
+  <p class="credit">✨ هذه المنصة من تصميم وبرمجة المهندس زياد داود ✨</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('student',this)">👨‍🎓 الطالب</button>
+  <button class="tab" onclick="switchTab('teacher',this)">👨‍🏫 المعلم</button>
+</div>
+
+<div class="container">
+
+<!-- ===== STUDENT ===== -->
+<div id="student" class="section active">
+  <h2 style="text-align:right;margin-bottom:24px;color:#2E7D32;">🎮 اختر اللعبة</h2>
+  <div class="grid">
+    <div class="card" onclick="startGame('quiz')">
+      <div class="card-icon">❓</div>
+      <div class="card-title">الاختبار</div>
+      <div class="card-sub">أسئلة اختيار من متعدد</div>
+    </div>
+    <div class="card" onclick="startGame('image')">
+      <div class="card-icon">🖼️</div>
+      <div class="card-title">لعبة الصور</div>
+      <div class="card-sub">خمّن اسم الصورة</div>
+    </div>
+    <div class="card" onclick="startGame('scramble')">
+      <div class="card-icon">🔀</div>
+      <div class="card-title">رتّب الكلمات</div>
+      <div class="card-sub">رتّب الكلمات لتكوين جملة</div>
+    </div>
+    <div class="card" onclick="startGame('guess')">
+      <div class="card-icon">🎯</div>
+      <div class="card-title">التخمين</div>
+      <div class="card-sub">خمّن الكلمة من التلميح</div>
+    </div>
+    <div class="card" onclick="startGame('match')">
+      <div class="card-icon">🧩</div>
+      <div class="card-title">صل بالمناسب</div>
+      <div class="card-sub">وصّل المصطلح بتعريفه</div>
+    </div>
+    <div class="card" onclick="startGame('fatwa')">
+      <div class="card-icon">⏱️</div>
+      <div class="card-title">سباق الفتاوى</div>
+      <div class="card-sub">أجب قبل انتهاء الوقت</div>
+    </div>
+    <div class="card" onclick="startGame('memory')">
+      <div class="card-icon">🃏</div>
+      <div class="card-title">اقلب البطاقات</div>
+      <div class="card-sub">لعبة الذاكرة للمفاهيم</div>
+    </div>
+    <div class="card" onclick="startGame('ayah')">
+      <div class="card-icon">🏗️</div>
+      <div class="card-title">أكمل الآية</div>
+      <div class="card-sub">أكمل الآية القرآنية الناقصة</div>
+    </div>
+    <div class="card" onclick="startGame('timeline')">
+      <div class="card-icon">📊</div>
+      <div class="card-title">رتّب الأحداث</div>
+      <div class="card-sub">رتّب الأحداث الإسلامية زمنياً</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEACHER ===== -->
+<div id="teacher" class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;flex-wrap:wrap;" id="teacherGrid">
+
+    <!-- ADD QUESTION -->
+    <div>
+      <h2 style="color:#2E7D32;margin-bottom:20px;">✏️ إضافة سؤال</h2>
+      <div style="background:white;padding:24px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+        <div class="form-group">
+          <label>نوع السؤال:</label>
+          <select id="questionType" onchange="updateQuestionForm()">
+            <option value="mcq">❓ اختيار من متعدد</option>
+            <option value="image">🖼️ صورة (خمّن الاسم)</option>
+            <option value="scramble">🔀 رتّب الكلمات</option>
+            <option value="guess">🎯 تخمين من تلميح</option>
+            <option value="match">🧩 صل بالمناسب</option>
+            <option value="fatwa">⏱️ سباق الفتاوى</option>
+            <option value="memory">🃏 بطاقة ذاكرة</option>
+            <option value="ayah">🏗️ أكمل الآية</option>
+            <option value="timeline">📊 رتّب الأحداث</option>
+          </select>
+        </div>
+        <div id="questionForm"></div>
+        <button class="btn" style="width:100%;margin-top:6px;" onclick="addQuestion()">➕ إضافة السؤال</button>
+      </div>
+
+      <!-- STATS -->
+      <h3 style="color:#2E7D32;margin:28px 0 14px;">📊 إحصائيات</h3>
+      <div class="stats" id="statsBox"></div>
+    </div>
+
+    <!-- QUESTION LIST -->
+    <div>
+      <h2 style="color:#2E7D32;margin-bottom:20px;">📋 الأسئلة المضافة</h2>
+      <div id="allQuestionsList"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- GAME MODAL -->
+<div id="gameModal" class="modal">
+  <div class="modal-content">
+    <button class="close-modal" onclick="closeGameModal()">✕</button>
+    <div id="gameContent"></div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+let quizQuestions     = [];
+let imageQuestions    = [];
+let scrambleQuestions = [];
+let guessQuestions    = [];
+let matchQuestions    = [];
+let fatwaQuestions    = [];
+let memoryCards       = [];
+let ayahQuestions     = [];
+let timelineQuestions = [];
+
+let currentQuestion = 0;
+let score = 0;
+let selectedAnswer = null;
+let gameType = '';
+let _fatwaTimer = null;
+
+// ===================== PERSIST =====================
+const STORAGE_KEY = 'hidayaPlatformV3';
+
+function saveData() {
+  const d = { quizQuestions, imageQuestions, scrambleQuestions, guessQuestions,
+              matchQuestions, fatwaQuestions, memoryCards, ayahQuestions, timelineQuestions };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+}
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    quizQuestions     = d.quizQuestions     || [];
+    imageQuestions    = d.imageQuestions    || [];
+    scrambleQuestions = d.scrambleQuestions || [];
+    guessQuestions    = d.guessQuestions    || [];
+    matchQuestions    = d.matchQuestions    || [];
+    fatwaQuestions    = d.fatwaQuestions    || [];
+    memoryCards       = d.memoryCards       || [];
+    ayahQuestions     = d.ayahQuestions     || [];
+    timelineQuestions = d.timelineQuestions || [];
+  } catch(e) {}
+}
+
+// Save on every page-close / refresh
+window.addEventListener('beforeunload', saveData);
+
+// ===================== INIT =====================
+window.addEventListener('load', () => {
+  loadData();
+  updateQuestionForm();
+  renderStats();
+  renderAllQuestions();
+});
+
+// ===================== STUDENT NAME =====================
+let studentName = '';
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (tab === 'teacher') { renderStats(); renderAllQuestions(); }
+  if (tab === 'student' && !studentName) {
+    const modal = document.getElementById('studentNameModal');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('studentNameInput').focus(), 100);
+    document.getElementById('studentNameInput').onkeypress = e => { if(e.key==='Enter') confirmStudentName(); };
+  }
+}
+
+function confirmStudentName() {
+  const input = document.getElementById('studentNameInput');
+  const name = input.value.trim();
+  if (!name) {
+    input.style.borderColor='#C62828';
+    input.placeholder='❗ أدخل اسمك أولاً!';
+    setTimeout(()=>{ input.style.borderColor='#ddd'; input.placeholder='اكتب اسمك هنا...'; },1200);
+    return;
+  }
+  studentName = name;
+  document.getElementById('studentNameModal').style.display = 'none';
+  showWelcomeAnimation(name);
+}
+
+function showWelcomeAnimation(name) {
+  const anim = document.getElementById('welcomeAnim');
+  const inner = document.getElementById('welcomeAnimInner');
+  const nameEl = document.getElementById('welcomeName');
+  const particles = document.getElementById('particlesContainer');
+
+  nameEl.textContent = name;
+  particles.innerHTML = '';
+
+  const emojis = ['⭐','🌟','✨','🎉','🎊','💫','🏆','🌈'];
+  for(let i=0;i<24;i++){
+    const p = document.createElement('div');
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const size = Math.random()*22+14;
+    const left = Math.random()*100;
+    const top = Math.random()*100;
+    const dur = (Math.random()*1.2+0.8).toFixed(2);
+    const delay = (Math.random()*0.6).toFixed(2);
+    p.style.cssText = `position:absolute;font-size:${size}px;left:${left}%;top:${top}%;opacity:0;animation:particleFly ${dur}s ease forwards ${delay}s;`;
+    particles.appendChild(p);
+  }
+
+  anim.style.display = 'flex';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      inner.style.opacity = '1';
+      inner.style.transform = 'scale(1)';
+    });
+  });
+
+  playWelcomeSound();
+
+  setTimeout(() => {
+    inner.style.transition = 'all 0.5s ease';
+    inner.style.opacity = '0';
+    inner.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+      anim.style.display = 'none';
+      inner.style.transition = 'none';
+      inner.style.opacity = '0';
+      inner.style.transform = 'scale(0.5)';
+      setTimeout(() => inner.style.transition = 'all 0.6s cubic-bezier(.34,1.56,.64,1)', 50);
+    }, 500);
+  }, 2800);
+}
+
+// ===================== TOAST =====================
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+// ===================== NATURAL SOUNDS =====================
+function getCtx() {
+  return new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// 🌿 صوت تصفيق طبيعي — ضوضاء بيضاء فلترة تشبه تصفيق خفيف
+function playApplause() {
+  try {
+    const ctx = getCtx();
+    const dur = 1.2;
+    // موجة تصفيق: noise burst x3
+    for(let b=0;b<3;b++) {
+      const buf = ctx.createBuffer(1, ctx.sampleRate*0.18, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 1200 + b*200;
+      bandpass.Q.value = 0.8;
+      const g = ctx.createGain();
+      const t = ctx.currentTime + b*0.22;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.9, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t+0.18);
+      src.connect(bandpass); bandpass.connect(g); g.connect(ctx.destination);
+      src.start(t); src.stop(t+0.2);
+    }
+    // نغمة صغيرة طبيعية (ding) بعد التصفيق
+    const osc = ctx.createOscillator();
+    const gDing = ctx.createGain();
+    osc.connect(gDing); gDing.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime+0.55);
+    osc.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime+0.65);
+    gDing.gain.setValueAtTime(0.7, ctx.currentTime+0.55);
+    gDing.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+1.1);
+    osc.start(ctx.currentTime+0.55); osc.stop(ctx.currentTime+1.1);
+  } catch(e) {}
+}
+
+// 🌊 صوت خطأ — نفخة هواء هابطة تشبه صوت الريح
+function playWrongSound() {
+  try {
+    const ctx = getCtx();
+    // Wind whoosh
+    const buf = ctx.createBuffer(1, ctx.sampleRate*0.5, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(800, ctx.currentTime);
+    lp.frequency.exponentialRampToValueAtTime(200, ctx.currentTime+0.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.85, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.5);
+    src.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(ctx.currentTime); src.stop(ctx.currentTime+0.5);
+  } catch(e) {}
+}
+
+// 🔔 صوت ترحيب — جرس طبيعي ناعم
+function playWelcomeSound() {
+  try {
+    const ctx = getCtx();
+    // Bell tones - overtones طبيعية للجرس
+    const bellFreqs = [440, 880, 1320, 1760];
+    const bellGains = [0.6, 0.35, 0.18, 0.09];
+    bellFreqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = i === 0 ? 'sine' : 'sine';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(bellGains[i], ctx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+2.0);
+      osc.start(ctx.currentTime+0.01);
+      osc.stop(ctx.currentTime+2.0);
+    });
+    // ثاني جرس بعد 0.4 ثانية
+    setTimeout(() => {
+      try {
+        const ctx2 = getCtx();
+        [554, 1108].forEach((freq, i) => {
+          const osc = ctx2.createOscillator(), g = ctx2.createGain();
+          osc.connect(g); g.connect(ctx2.destination);
+          osc.frequency.value = freq;
+          g.gain.setValueAtTime(i===0?0.55:0.25, ctx2.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime+1.5);
+          osc.start(ctx2.currentTime); osc.stop(ctx2.currentTime+1.5);
+        });
+      } catch(e){}
+    }, 400);
+  } catch(e) {}
+}
+
+// ===================== FLASH + MOTIVE =====================
+const motiveMessages = [
+  ['🌟','ممتاز يا بطل!'],['🔥','أحسنت! استمر!'],['🏆','رائع جداً!'],
+  ['🎉','إجابة صحيحة!'],['💪','قوي جداً!'],['👑','ملك الإجابات!'],
+  ['🌈','برافو عليك!'],['🚀','إلى الأمام!'],['✨','نجم متألق!'],
+  ['🦁','شجاع ومتفوق!']
+];
+
+function flashScreen(color) {
+  const ov = document.getElementById('flashOverlay');
+  ov.className = color;
+  requestAnimationFrame(() => {
+    ov.classList.add('show');
+    setTimeout(() => ov.classList.remove('show'), 500);
+  });
+}
+
+function showMotivation() {
+  const m = motiveMessages[Math.floor(Math.random()*motiveMessages.length)];
+  document.getElementById('motiveEmoji').textContent = m[0];
+  document.getElementById('motiveText').textContent  = m[1];
+  const pop = document.getElementById('motivePop');
+  pop.classList.add('show');
+  setTimeout(() => pop.classList.remove('show'), 1800);
+}
+
+function onCorrect() { playApplause(); flashScreen('green'); showMotivation(); }
+function onWrong()   { playWrongSound(); flashScreen('red'); }
+
+// ===================== QUESTION FORM =====================
+function updateQuestionForm() {
+  const type = document.getElementById('questionType').value;
+  const form = document.getElementById('questionForm');
+  if (type === 'mcq') {
+    form.innerHTML = `
+      <div class="form-group"><label>السؤال:</label><textarea id="q_text" rows="3" placeholder="اكتب السؤال هنا..."></textarea></div>
+      <div class="form-group"><label>الخيار أ:</label><input type="text" id="opt_a"></div>
+      <div class="form-group"><label>الخيار ب:</label><input type="text" id="opt_b"></div>
+      <div class="form-group"><label>الخيار ج:</label><input type="text" id="opt_c"></div>
+      <div class="form-group"><label>الخيار د:</label><input type="text" id="opt_d"></div>
+      <div class="form-group"><label>الإجابة الصحيحة:</label>
+        <select id="correct"><option value="0">أ</option><option value="1">ب</option><option value="2">ج</option><option value="3">د</option></select>
+      </div>`;
+  } else if (type === 'image') {
+    form.innerHTML = `
+      <div class="form-group"><label>اسم الصورة (الإجابة):</label><input type="text" id="img_answer" placeholder="مثال: الكعبة المشرفة"></div>
+      <div class="form-group">
+        <label>📁 اختر الصورة من جهازك:</label>
+        <input type="file" id="img_file" accept="image/*" onchange="previewImage(this)">
+        <img id="img_preview" class="img-preview">
+      </div>
+      <div class="form-group"><label>تلميح (اختياري):</label><input type="text" id="img_hint" placeholder="مثال: قبلة المسلمين"></div>`;
+  } else if (type === 'scramble') {
+    form.innerHTML = `
+      <div class="form-group"><label>الجملة الكاملة (الإجابة الصحيحة):</label><input type="text" id="scramble_sentence" placeholder="مثال: العلم نور والجهل ظلام"></div>
+      <div class="form-group"><label>تلميح (اختياري):</label><input type="text" id="scramble_hint" placeholder="مثال: مثل عربي مشهور"></div>`;
+  } else if (type === 'guess') {
+    form.innerHTML = `
+      <div class="form-group"><label>الكلمة:</label><input type="text" id="guess_word" placeholder="الكلمة المراد تخمينها"></div>
+      <div class="form-group"><label>التلميح:</label><input type="text" id="guess_hint" placeholder="مثال: ضد الليل"></div>`;
+  } else if (type === 'match') {
+    form.innerHTML = `
+      <p style="font-size:13px;color:#888;margin-bottom:14px;">أدخل حتى 4 أزواج (مصطلح ← تعريف)</p>
+      ${[1,2,3,4].map(i=>`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div class="form-group" style="margin:0"><label>المصطلح ${i}:</label><input type="text" id="mt${i}" placeholder="مصطلح ${i}"></div>
+          <div class="form-group" style="margin:0"><label>التعريف ${i}:</label><input type="text" id="md${i}" placeholder="تعريف ${i}"></div>
+        </div>`).join('')}`;
+  } else if (type === 'fatwa') {
+    form.innerHTML = `
+      <div class="form-group"><label>السؤال:</label><textarea id="fatwa_text" rows="3" placeholder="اكتب السؤال هنا..."></textarea></div>
+      <div class="form-group"><label>الإجابة الصحيحة:</label><input type="text" id="fatwa_correct" placeholder="الإجابة الصحيحة"></div>
+      <div class="form-group"><label>إجابة خاطئة 1:</label><input type="text" id="fatwa_w1" placeholder="إجابة خاطئة"></div>
+      <div class="form-group"><label>إجابة خاطئة 2:</label><input type="text" id="fatwa_w2" placeholder="إجابة خاطئة"></div>
+      <div class="form-group"><label>الوقت المحدد (ثانية):</label><input type="number" id="fatwa_time" value="15" min="5" max="60"></div>`;
+  } else if (type === 'memory') {
+    form.innerHTML = `
+      <div class="form-group"><label>المصطلح / الكلمة:</label><input type="text" id="mem_term" placeholder="مثال: الإخلاص"></div>
+      <div class="form-group"><label>التعريف / المعنى:</label><input type="text" id="mem_def"  placeholder="مثال: إفراد الله بالعبادة"></div>`;
+  } else if (type === 'ayah') {
+    form.innerHTML = `
+      <div class="form-group"><label>بداية الآية (النص الظاهر):</label><input type="text" id="ayah_start" placeholder="مثال: إِنَّ مَعَ الْعُسْرِ"></div>
+      <div class="form-group"><label>إكمال الآية (الإجابة):</label><input type="text" id="ayah_end" placeholder="مثال: يُسْرًا"></div>
+      <div class="form-group"><label>اسم السورة:</label><input type="text" id="ayah_sura" placeholder="مثال: الشرح"></div>`;
+  } else if (type === 'timeline') {
+    form.innerHTML = `
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">أدخل الأحداث بالترتيب الصحيح من الأقدم للأحدث</p>
+      ${[1,2,3,4].map(i=>`<div class="form-group"><label>الحدث ${i}:</label><input type="text" id="tl${i}" placeholder="الحدث ${i}"></div>`).join('')}`;
+  }
+}
+
+function previewImage(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('img_preview');
+    img.src = e.target.result; img.style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===================== ADD QUESTION =====================
+function addQuestion() {
+  const type = document.getElementById('questionType').value;
+  if (type === 'mcq') {
+    const txt = document.getElementById('q_text').value.trim();
+    if (!txt) { showToast('❌ أكتب السؤال أولاً','error'); return; }
+    quizQuestions.push({ text:txt, options:[
+      document.getElementById('opt_a').value,
+      document.getElementById('opt_b').value,
+      document.getElementById('opt_c').value,
+      document.getElementById('opt_d').value
+    ], correct: parseInt(document.getElementById('correct').value) });
+  } else if (type === 'image') {
+    const file = document.getElementById('img_file').files[0];
+    const ans  = document.getElementById('img_answer').value.trim();
+    if (!ans) { showToast('❌ اكتب اسم الصورة','error'); return; }
+    if (!file) { showToast('❌ اختر صورة من جهازك','error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      imageQuestions.push({ image:e.target.result, answer:ans, hint:document.getElementById('img_hint').value });
+      saveData(); renderStats(); renderAllQuestions();
+      showToast('✅ تم إضافة السؤال!');
+      updateQuestionForm();
+    };
+    reader.readAsDataURL(file);
+    return;
+  } else if (type === 'scramble') {
+    const s = document.getElementById('scramble_sentence').value.trim();
+    if (!s) { showToast('❌ اكتب الجملة','error'); return; }
+    scrambleQuestions.push({ sentence:s, hint:document.getElementById('scramble_hint').value });
+  } else if (type === 'guess') {
+    const w = document.getElementById('guess_word').value.trim();
+    if (!w) { showToast('❌ اكتب الكلمة','error'); return; }
+    guessQuestions.push({ word:w, hint:document.getElementById('guess_hint').value });
+  } else if (type === 'match') {
+    const pairs = [];
+    for (let i=1;i<=4;i++) {
+      const t = document.getElementById(`mt${i}`).value.trim();
+      const d = document.getElementById(`md${i}`).value.trim();
+      if (t&&d) pairs.push({term:t,def:d});
+    }
+    if (pairs.length < 2) { showToast('❌ أدخل زوجين على الأقل','error'); return; }
+    matchQuestions.push({ pairs });
+  } else if (type === 'fatwa') {
+    const txt = document.getElementById('fatwa_text').value.trim();
+    const cor = document.getElementById('fatwa_correct').value.trim();
+    if (!txt||!cor) { showToast('❌ أكمل البيانات','error'); return; }
+    fatwaQuestions.push({ text:txt, correct:cor,
+      wrong:[document.getElementById('fatwa_w1').value, document.getElementById('fatwa_w2').value],
+      time:parseInt(document.getElementById('fatwa_time').value)||15 });
+  } else if (type === 'memory') {
+    const t = document.getElementById('mem_term').value.trim();
+    const d = document.getElementById('mem_def').value.trim();
+    if (!t||!d) { showToast('❌ أكمل البيانات','error'); return; }
+    memoryCards.push({ term:t, def:d });
+  } else if (type === 'ayah') {
+    const s = document.getElementById('ayah_start').value.trim();
+    const e = document.getElementById('ayah_end').value.trim();
+    if (!s||!e) { showToast('❌ أكمل بيانات الآية','error'); return; }
+    ayahQuestions.push({ start:s, end:e, sura:document.getElementById('ayah_sura').value });
+  } else if (type === 'timeline') {
+    const evs = [1,2,3,4].map(i=>document.getElementById(`tl${i}`).value.trim()).filter(Boolean);
+    if (evs.length < 2) { showToast('❌ أدخل حدثين على الأقل','error'); return; }
+    timelineQuestions.push({ events:evs });
+  }
+  saveData(); renderStats(); renderAllQuestions();
+  showToast('✅ تم إضافة السؤال!');
+  updateQuestionForm();
+}
+
+// ===================== DELETE QUESTION =====================
+function deleteQuestion(cat, idx) {
+  if (!confirm('هل تريد حذف هذا السؤال؟')) return;
+  const map = { quiz:quizQuestions, image:imageQuestions, scramble:scrambleQuestions,
+    guess:guessQuestions, match:matchQuestions, fatwa:fatwaQuestions,
+    memory:memoryCards, ayah:ayahQuestions, timeline:timelineQuestions };
+  map[cat].splice(idx,1);
+  saveData(); renderStats(); renderAllQuestions();
+  showToast('🗑️ تم حذف السؤال');
+}
+
+// ===================== RENDER STATS =====================
+function renderStats() {
+  const rows = [
+    ['quiz','❓ اختيار من متعدد', quizQuestions.length],
+    ['image','🖼️ صور', imageQuestions.length],
+    ['scramble','🔀 رتّب الكلمات', scrambleQuestions.length],
+    ['guess','🎯 تخمين', guessQuestions.length],
+    ['match','🧩 صل بالمناسب', matchQuestions.length],
+    ['fatwa','⏱️ سباق الفتاوى', fatwaQuestions.length],
+    ['memory','🃏 بطاقات الذاكرة', memoryCards.length],
+    ['ayah','🏗️ أكمل الآية', ayahQuestions.length],
+    ['timeline','📊 رتّب الأحداث', timelineQuestions.length],
+  ];
+  document.getElementById('statsBox').innerHTML = rows.map(r=>`
+    <div class="stat-row">
+      <span class="stat-value">${r[2]}</span>
+      <span class="stat-label">${r[1]}</span>
+    </div>`).join('');
+}
+
+// ===================== RENDER ALL QUESTIONS =====================
+function renderAllQuestions() {
+  const container = document.getElementById('allQuestionsList');
+  const all = [
+    ...quizQuestions.map((q,i)=>({cat:'quiz',idx:i,label:'❓',text:q.text})),
+    ...imageQuestions.map((q,i)=>({cat:'image',idx:i,label:'🖼️',text:'صورة: '+q.answer})),
+    ...scrambleQuestions.map((q,i)=>({cat:'scramble',idx:i,label:'🔀',text:q.sentence})),
+    ...guessQuestions.map((q,i)=>({cat:'guess',idx:i,label:'🎯',text:q.hint+' ← '+q.word})),
+    ...matchQuestions.map((q,i)=>({cat:'match',idx:i,label:'🧩',text:'صل: '+q.pairs.map(p=>p.term).join('، ')})),
+    ...fatwaQuestions.map((q,i)=>({cat:'fatwa',idx:i,label:'⏱️',text:q.text})),
+    ...memoryCards.map((q,i)=>({cat:'memory',idx:i,label:'🃏',text:q.term+' ← '+q.def})),
+    ...ayahQuestions.map((q,i)=>({cat:'ayah',idx:i,label:'🏗️',text:q.start+' ... '+q.end})),
+    ...timelineQuestions.map((q,i)=>({cat:'timeline',idx:i,label:'📊',text:q.events.join(' ← ')})),
+  ];
+  if (!all.length) {
+    container.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">لا توجد أسئلة بعد</p>';
+    return;
+  }
+  container.innerHTML = all.map(q=>`
+    <div class="q-item">
+      <span style="font-size:22px">${q.label}</span>
+      <div class="q-item-text">${q.text}</div>
+      <button class="btn btn-danger" onclick="deleteQuestion('${q.cat}',${q.idx})" style="padding:7px 14px;font-size:13px;">🗑️</button>
+    </div>`).join('');
+}
+
+// ===================== START GAME =====================
+function startGame(type) {
+  gameType = type;
+  clearInterval(_fatwaTimer);
+  const checks = {
+    quiz:'quizQuestions', image:'imageQuestions', scramble:'scrambleQuestions',
+    guess:'guessQuestions', match:'matchQuestions', fatwa:'fatwaQuestions',
+    memory:'memoryCards', ayah:'ayahQuestions', timeline:'timelineQuestions'
+  };
+  const arr = eval(checks[type]);
+  if (!arr.length) { showToast('❌ لا توجد أسئلة لهذه اللعبة!','error'); return; }
+
+  currentQuestion=0; score=0; selectedAnswer=null;
+  document.getElementById('gameModal').classList.add('active');
+
+  if (type==='quiz')     loadQuestion();
+  else if (type==='image')    loadImageQuestion();
+  else if (type==='scramble') loadScrambleQuestion();
+  else if (type==='guess')    loadGuessQuestion();
+  else if (type==='match')    loadMatchQuestion();
+  else if (type==='fatwa')    loadFatwaQuestion();
+  else if (type==='memory')   loadMemoryGame();
+  else if (type==='ayah')     loadAyahQuestion();
+  else if (type==='timeline') loadTimelineQuestion();
+}
+
+function closeGameModal() {
+  clearInterval(_fatwaTimer);
+  document.getElementById('gameModal').classList.remove('active');
+}
+
+// ===================== MCQ GAME =====================
+function loadQuestion() {
+  const q = quizQuestions[currentQuestion];
+  const progress = (currentQuestion/quizQuestions.length)*100;
+  document.getElementById('gameContent').innerHTML = `
+    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+    <div style="text-align:center;color:#999;margin-bottom:16px;font-size:13px;">السؤال ${currentQuestion+1} من ${quizQuestions.length}</div>
+    <div class="question-text">${q.text}</div>
+    <div class="options">${q.options.map((opt,i)=>`
+      <div class="option" onclick="selectAnswer(${i},this)">
+        ${['أ','ب','ج','د'][i]}) ${opt}
+      </div>`).join('')}
+    </div>
+    <button class="btn" style="width:100%;" id="submitBtn" onclick="submitAnswer()" disabled>✅ إرسال</button>
+    <div id="result"></div>`;
+}
+
+function selectAnswer(idx,el) {
+  selectedAnswer=idx;
+  document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('submitBtn').disabled=false;
+}
+
+function submitAnswer() {
+  const q=quizQuestions[currentQuestion];
+  const ok=selectedAnswer===q.correct;
+  document.getElementById('submitBtn').disabled=true;
+  document.querySelectorAll('.option').forEach((o,i)=>{
+    if(i===q.correct) o.classList.add('correct');
+    else if(i===selectedAnswer&&!ok) o.classList.add('wrong');
+  });
+  const res=document.getElementById('result');
+  if(ok){ onCorrect(); score+=10; res.className='result success'; res.textContent='✅ إجابة صحيحة! 🎉'; }
+  else  { onWrong();             res.className='result error';   res.textContent='❌ خطأ! الإجابة الصحيحة: '+q.options[q.correct]; }
+  setTimeout(()=>{ currentQuestion++; selectedAnswer=null;
+    currentQuestion<quizQuestions.length ? loadQuestion() : showFinalScore(); }, 2400);
+}
+
+function showFinalScore() {
+  const total = (gameType==='quiz'?quizQuestions:imageQuestions).length*10;
+  const pct   = Math.round((score/total)*100);
+  const stars = pct>=80?'⭐⭐⭐':pct>=50?'⭐⭐':'⭐';
+  document.getElementById('gameContent').innerHTML = `
+    <h2 style="text-align:center;margin-bottom:26px;">انتهيت! 🎓</h2>
+    <div class="score-display">
+      <div style="font-size:40px">${stars}</div>
+      <div class="score-number">${score}</div>
+      <div class="score-label">من ${total} نقطة (${pct}%)</div>
+    </div>
+    <button class="btn" style="width:100%;margin-top:16px;" onclick="closeGameModal()">🏠 العودة</button>`;
+}
+
+// ===================== IMAGE GAME =====================
+function loadImageQuestion() {
+  const q=imageQuestions[currentQuestion];
+  const progress=(currentQuestion/imageQuestions.length)*100;
+  document.getElementById('gameContent').innerHTML=`
+    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+    <div style="text-align:center;color:#999;margin-bottom:14px;font-size:13px;">الصورة ${currentQuestion+1} من ${imageQuestions.length}</div>
+    <div class="question-text">ما اسم هذه الصورة؟ 🤔</div>
+    <img src="${q.image}" style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;margin:14px 0;">
+    ${q.hint?`<p style="text-align:center;color:#999;font-size:13px;margin-bottom:10px;">💡 ${q.hint}</p>`:''}
+    <input type="text" id="imgInput" placeholder="اكتب الإجابة..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;margin-bottom:14px;font-family:'Cairo',sans-serif;">
+    <button class="btn" style="width:100%;" onclick="submitImageAnswer()">✅ تحقق</button>
+    <div id="result"></div>`;
+}
+
+function submitImageAnswer() {
+  const q=imageQuestions[currentQuestion];
+  const ok=document.getElementById('imgInput').value.toLowerCase().trim()===q.answer.toLowerCase();
+  document.getElementById('imgInput').disabled=true;
+  const res=document.getElementById('result');
+  if(ok){ onCorrect(); score+=10; res.className='result success'; res.textContent='✅ صحيح! 🎉'; }
+  else  { onWrong();              res.className='result error';   res.textContent='❌ خطأ! الإجابة: '+q.answer; }
+  setTimeout(()=>{ currentQuestion++;
+    currentQuestion<imageQuestions.length ? loadImageQuestion() : showFinalScore(); }, 2400);
+}
+
+// ===================== SCRAMBLE GAME =====================
+function loadScrambleQuestion() {
+  const q=scrambleQuestions[Math.floor(Math.random()*scrambleQuestions.length)];
+  const shuffled=[...q.sentence.split(' ')].sort(()=>Math.random()-.5);
+  window._scrAnswer=q.sentence; window._scrSelected=[];
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:16px;">🔀 رتّب الكلمات</h2>
+    ${q.hint?`<p style="text-align:center;color:#999;font-size:13px;margin-bottom:12px;">💡 ${q.hint}</p>`:''}
+    <div id="answerArea" style="min-height:52px;border:2px dashed #2E7D32;border-radius:12px;padding:10px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;background:#f0f8f4;">
+      <span id="answerPH" style="color:#aaa;font-size:13px;">ستظهر الكلمات هنا...</span>
+    </div>
+    <div id="wordBank" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px;">
+      ${shuffled.map((w,i)=>`<button onclick="pickWord(this,'${w.replace(/'/g,"\\'")}',${i})"
+        style="padding:9px 16px;background:#2E7D32;color:white;border:none;border-radius:22px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;">${w}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn" style="flex:1;" onclick="checkScramble()">✅ تحقق</button>
+      <button class="btn btn-yellow" style="flex:1;" onclick="loadScrambleQuestion()">🔄 سؤال جديد</button>
+    </div>
+    <div id="result"></div>`;
+}
+
+function pickWord(btn,word) {
+  if(btn.disabled) return;
+  btn.disabled=true; btn.style.opacity='.3';
+  window._scrSelected.push({word,btn});
+  const area=document.getElementById('answerArea');
+  const ph=document.getElementById('answerPH'); if(ph) ph.remove();
+  const sp=document.createElement('span');
+  sp.textContent=word;
+  sp.style.cssText='padding:7px 14px;background:#F9A825;color:white;border-radius:18px;font-weight:700;font-size:14px;cursor:pointer;';
+  sp.onclick=()=>{ window._scrSelected.splice(window._scrSelected.findIndex(x=>x.btn===btn),1);
+    sp.remove(); btn.disabled=false; btn.style.opacity='1';
+    if(!document.getElementById('answerArea').querySelector('span[style]')&&!document.getElementById('answerArea').children.length){
+      const p=document.createElement('span'); p.id='answerPH'; p.style.color='#aaa'; p.style.fontSize='13px'; p.textContent='ستظهر الكلمات هنا...'; area.appendChild(p);
+    }
+  };
+  area.appendChild(sp);
+}
+
+function checkScramble() {
+  const user=window._scrSelected.map(x=>x.word).join(' ');
+  const ok=user.trim()===window._scrAnswer.trim();
+  const res=document.getElementById('result');
+  if(ok){ onCorrect(); res.className='result success'; res.textContent='✅ ممتاز! الترتيب صحيح 🎉'; setTimeout(()=>closeGameModal(),2200); }
+  else  { onWrong();   res.className='result error';   res.innerHTML=`❌ خطأ! الصحيح: <strong>${window._scrAnswer}</strong>`; }
+}
+
+// ===================== GUESS GAME =====================
+function loadGuessQuestion() {
+  const g=guessQuestions[Math.floor(Math.random()*guessQuestions.length)];
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:16px;">🎯 خمّن الكلمة</h2>
+    <div class="question-text">التلميح: ${g.hint}</div>
+    <input type="text" id="guessInput" placeholder="اكتب الكلمة..."
+      style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;margin:16px 0;font-family:'Cairo',sans-serif;">
+    <button class="btn" style="width:100%;" onclick="checkGuess('${g.word.replace(/'/g,"\\'")}')">✅ تحقق</button>
+    <button class="btn btn-yellow" style="width:100%;margin-top:10px;" onclick="loadGuessQuestion()">🔄 سؤال آخر</button>
+    <div id="result"></div>`;
+  document.getElementById('guessInput').addEventListener('keypress',e=>{if(e.key==='Enter')checkGuess(g.word);});
+}
+
+function checkGuess(word) {
+  const ok=document.getElementById('guessInput').value.toLowerCase().trim()===word.toLowerCase();
+  const res=document.getElementById('result');
+  if(ok){ onCorrect(); res.className='result success'; res.textContent='✅ صحيح! '+word+' 📚'; setTimeout(()=>closeGameModal(),2000); }
+  else  { onWrong();   res.className='result error';   res.textContent='❌ خطأ! حاول مرة أخرى...'; }
+}
+
+// ===================== MATCH GAME =====================
+function loadMatchQuestion() {
+  const q=matchQuestions[Math.floor(Math.random()*matchQuestions.length)];
+  const pairs=q.pairs;
+  const shuffDefs=[...pairs].sort(()=>Math.random()-.5);
+  window._matchSelected=null; window._matchDone=[];
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:12px;">🧩 صل بالمناسب</h2>
+    <p style="text-align:center;color:#777;font-size:13px;margin-bottom:18px;">اضغط مصطلح ثم تعريفه المناسب</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div id="terms">${pairs.map((p,i)=>`
+        <div id="term_${i}" onclick="matchClick('term',${i},this)"
+          style="padding:12px;margin-bottom:9px;background:#E8F5E9;border:2px solid #c8e6c9;border-radius:10px;cursor:pointer;text-align:center;font-weight:700;font-size:14px;transition:all .2s;">
+          ${p.term}</div>`).join('')}
+      </div>
+      <div id="defs">${shuffDefs.map((p,i)=>`
+        <div id="def_${i}" onclick="matchClick('def',${i},this)"
+          data-pair="${pairs.indexOf(p)}"
+          style="padding:12px;margin-bottom:9px;background:#FFF8E1;border:2px solid #ffe082;border-radius:10px;cursor:pointer;text-align:center;font-size:13px;transition:all .2s;">
+          ${p.def}</div>`).join('')}
+      </div>
+    </div>
+    <div id="matchRes" style="margin-top:14px;"></div>`;
+}
+
+function matchClick(type,idx,el) {
+  if (el.style.opacity==='0.35') return;
+  if (!window._matchSelected) {
+    window._matchSelected={type,idx,el};
+    el.style.boxShadow='0 0 0 3px #2E7D32';
+  } else {
+    const prev=window._matchSelected;
+    if (prev.type===type) {
+      prev.el.style.boxShadow=''; window._matchSelected={type,idx,el}; el.style.boxShadow='0 0 0 3px #2E7D32'; return;
+    }
+    const tEl=prev.type==='term'?prev.el:el;
+    const dEl=prev.type==='def'?prev.el:el;
+    const tIdx=prev.type==='term'?prev.idx:idx;
+    const dPair=parseInt(dEl.dataset.pair);
+    if (tIdx===dPair) {
+      onCorrect();
+      [tEl,dEl].forEach(e=>{ e.style.background='#c8e6c9'; e.style.border='2px solid #4CAF50'; e.style.opacity='.35'; e.style.cursor='default'; e.style.boxShadow=''; });
+      window._matchDone.push(tIdx);
+      if (window._matchDone.length===document.querySelectorAll('[id^="term_"]').length) {
+        document.getElementById('matchRes').innerHTML='<div class="result success">🎉 ممتاز! ربطت جميع الأزواج!</div>';
+        setTimeout(()=>closeGameModal(),2500);
+      }
+    } else {
+      onWrong();
+      [tEl,dEl].forEach(e=>e.style.background='#ffcdd2');
+      setTimeout(()=>{
+        tEl.style.background='#E8F5E9'; dEl.style.background='#FFF8E1';
+        tEl.style.boxShadow=''; dEl.style.boxShadow='';
+      },700);
+    }
+    window._matchSelected=null;
+  }
+}
+
+// ===================== FATWA RACE =====================
+function loadFatwaQuestion() {
+  clearInterval(_fatwaTimer);
+  if (currentQuestion>=fatwaQuestions.length) { showFatwaFinal(); return; }
+  const q=fatwaQuestions[currentQuestion];
+  const opts=[q.correct,...q.wrong.filter(Boolean)].sort(()=>Math.random()-.5);
+  let timeLeft=q.time||15;
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:8px;">⏱️ سباق الفتاوى</h2>
+    <div style="text-align:center;color:#777;font-size:13px;margin-bottom:12px;">السؤال ${currentQuestion+1}/${fatwaQuestions.length} | النقاط: ${score}</div>
+    <div style="text-align:center;margin-bottom:10px;">
+      <div id="timerCirc" style="display:inline-flex;align-items:center;justify-content:center;width:62px;height:62px;border-radius:50%;border:4px solid #F9A825;font-size:22px;font-weight:900;color:#F9A825;">${timeLeft}</div>
+    </div>
+    <div id="timerBar" style="height:7px;background:#eee;border-radius:10px;overflow:hidden;margin-bottom:18px;">
+      <div id="timerFill" style="height:100%;width:100%;background:linear-gradient(90deg,#F9A825,#FF6F00);transition:width 1s linear;"></div>
+    </div>
+    <div class="question-text" style="font-size:17px;">${q.text}</div>
+    <div class="options">${opts.map(o=>`<div class="option" onclick="submitFatwa(this,'${o.replace(/'/g,"\\'")}','${q.correct.replace(/'/g,"\\'")}')"> ${o}</div>`).join('')}</div>
+    <div id="fatwaRes"></div>`;
+  _fatwaTimer=setInterval(()=>{
+    timeLeft--;
+    const c=document.getElementById('timerCirc'), f=document.getElementById('timerFill');
+    if(c) c.textContent=timeLeft;
+    if(f) f.style.width=((timeLeft/(q.time||15))*100)+'%';
+    if(timeLeft<=3&&c){ c.style.borderColor='#C62828'; c.style.color='#C62828'; }
+    if(timeLeft<=0){
+      clearInterval(_fatwaTimer); onWrong();
+      document.querySelectorAll('.option').forEach(o=>o.style.pointerEvents='none');
+      const r=document.getElementById('fatwaRes');
+      if(r) r.innerHTML=`<div class="result error">⌛ انتهى الوقت! الصواب: <strong>${q.correct}</strong></div>`;
+      setTimeout(()=>{ currentQuestion++; loadFatwaQuestion(); },2200);
+    }
+  },1000);
+}
+
+function submitFatwa(el,chosen,correct) {
+  clearInterval(_fatwaTimer);
+  document.querySelectorAll('.option').forEach(o=>o.style.pointerEvents='none');
+  const ok=chosen===correct;
+  if(ok){ onCorrect(); score+=10; el.classList.add('correct'); document.getElementById('fatwaRes').innerHTML='<div class="result success">✅ صحيح! +10 نقاط 🎉</div>'; }
+  else  { onWrong();   el.classList.add('wrong'); document.querySelectorAll('.option').forEach(o=>{ if(o.textContent.trim()===correct) o.classList.add('correct'); });
+          document.getElementById('fatwaRes').innerHTML=`<div class="result error">❌ خطأ! الصواب: <strong>${correct}</strong></div>`; }
+  setTimeout(()=>{ currentQuestion++; loadFatwaQuestion(); },2300);
+}
+
+function showFatwaFinal() {
+  const total=fatwaQuestions.length*10, pct=Math.round((score/total)*100);
+  const stars=pct>=80?'⭐⭐⭐':pct>=50?'⭐⭐':'⭐';
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:24px;">انتهى السباق! ⏱️</h2>
+    <div class="score-display"><div style="font-size:38px">${stars}</div>
+      <div class="score-number">${score}</div>
+      <div class="score-label">من ${total} نقطة (${pct}%)</div>
+    </div>
+    <button class="btn" style="width:100%;margin-top:14px;" onclick="closeGameModal()">🏠 العودة</button>`;
+}
+
+// ===================== MEMORY GAME =====================
+function loadMemoryGame() {
+  const src=memoryCards.slice(0,Math.min(memoryCards.length,6));
+  const all=[];
+  src.forEach((c,i)=>{
+    all.push({id:i+'t',pair:i,text:c.term,type:'term'});
+    all.push({id:i+'d',pair:i,text:c.def, type:'def'});
+  });
+  all.sort(()=>Math.random()-.5);
+  window._memCards=all; window._memFlipped=[]; window._memMatched=[]; window._memLocked=false;
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:14px;">🃏 اقلب البطاقات</h2>
+    <p style="text-align:center;color:#777;font-size:13px;margin-bottom:16px;">ابحث عن كل مصطلح وتعريفه</p>
+    <div id="memGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      ${all.map((_,i)=>`
+        <div id="mc${i}" onclick="flipMem(${i})"
+          style="height:82px;background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .35s;overflow:hidden;">
+          <span class="mback" style="color:white;font-size:26px;">🌟</span>
+          <span class="mfront" style="display:none;color:#1a1a2e;font-size:12px;padding:8px;text-align:center;font-weight:700;">${all[i].text}</span>
+        </div>`).join('')}
+    </div>
+    <div id="memRes"></div>`;
+}
+
+function flipMem(i) {
+  if(window._memLocked||window._memMatched.includes(i)||window._memFlipped.includes(i)) return;
+  const el=document.getElementById('mc'+i);
+  el.querySelector('.mback').style.display='none';
+  el.querySelector('.mfront').style.display='block';
+  el.style.background='white'; el.style.border='2px solid #ddd';
+  window._memFlipped.push(i);
+  if(window._memFlipped.length===2){
+    window._memLocked=true;
+    const [a,b]=window._memFlipped;
+    const ca=window._memCards[a], cb=window._memCards[b];
+    if(ca.pair===cb.pair&&ca.type!==cb.type){
+      onCorrect();
+      [a,b].forEach(x=>{ const e=document.getElementById('mc'+x); e.style.background='#c8e6c9'; e.style.border='2px solid #4CAF50'; });
+      window._memMatched.push(a,b); window._memFlipped=[]; window._memLocked=false;
+      if(window._memMatched.length===window._memCards.length){
+        document.getElementById('memRes').innerHTML='<div class="result success">🎉 ممتاز! وجدت جميع الأزواج!</div>';
+        setTimeout(()=>closeGameModal(),2500);
+      }
+    } else {
+      onWrong();
+      setTimeout(()=>{
+        [a,b].forEach(x=>{ const e=document.getElementById('mc'+x);
+          e.querySelector('.mback').style.display='block'; e.querySelector('.mfront').style.display='none';
+          e.style.background='linear-gradient(135deg,#1B5E20,#2E7D32)'; e.style.border='none'; });
+        window._memFlipped=[]; window._memLocked=false;
+      },1000);
+    }
+  }
+}
+
+// ===================== AYAH GAME =====================
+function loadAyahQuestion() {
+  const q=ayahQuestions[Math.floor(Math.random()*ayahQuestions.length)];
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:16px;">🏗️ أكمل الآية</h2>
+    <div style="background:linear-gradient(135deg,#1B5E20,#43A047);color:white;padding:22px;border-radius:15px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:700;line-height:1.9;">${q.start} <span style="border-bottom:3px solid #F9A825;padding:0 28px;">...</span></div>
+      ${q.sura?`<div style="font-size:12px;opacity:.8;margin-top:8px;">📖 سورة ${q.sura}</div>`:''}
+    </div>
+    <input type="text" id="ayahIn" placeholder="أكمل الآية الكريمة..."
+      style="width:100%;padding:13px;border:2px solid #ddd;border-radius:10px;margin-bottom:14px;font-family:'Cairo',sans-serif;font-size:16px;text-align:center;">
+    <button class="btn" style="width:100%;" onclick="checkAyah('${q.end.replace(/'/g,"\\'")}')">✅ تحقق</button>
+    <button class="btn btn-yellow" style="width:100%;margin-top:10px;" onclick="loadAyahQuestion()">🔄 آية أخرى</button>
+    <div id="ayahRes" style="margin-top:14px;"></div>`;
+  document.getElementById('ayahIn').addEventListener('keypress',e=>{ if(e.key==='Enter') checkAyah(q.end); });
+}
+
+function checkAyah(end) {
+  const ok=document.getElementById('ayahIn').value.trim()===end.trim();
+  const res=document.getElementById('ayahRes');
+  if(ok){ onCorrect(); res.innerHTML='<div class="result success">✅ ممتاز! أكملت الآية بشكل صحيح 🌟</div>'; setTimeout(()=>closeGameModal(),2500); }
+  else  { onWrong();   res.innerHTML=`<div class="result error">❌ خطأ! الإكمال الصحيح: <strong>${end}</strong></div>`; }
+}
+
+// ===================== TIMELINE GAME =====================
+function loadTimelineQuestion() {
+  const q=timelineQuestions[Math.floor(Math.random()*timelineQuestions.length)];
+  const correct=[...q.events];
+  const shuffled=[...correct].sort(()=>Math.random()-.5);
+  window._tlCorrect=correct; window._tlCurrent=[...shuffled];
+  renderTimeline();
+}
+
+function renderTimeline() {
+  document.getElementById('gameContent').innerHTML=`
+    <h2 style="text-align:center;margin-bottom:10px;">📊 رتّب الأحداث</h2>
+    <p style="text-align:center;color:#777;font-size:13px;margin-bottom:16px;">رتّب من الأقدم ⬆ إلى الأحدث باستخدام الأسهم</p>
+    <div id="tlGrid">${window._tlCurrent.map((ev,i)=>`
+      <div style="background:white;border:2px solid #e0e0e0;border-radius:12px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:10px;">
+        <span style="background:#2E7D32;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${i+1}</span>
+        <span style="flex:1;font-weight:600;font-size:14px;">${ev}</span>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${i>0?`<button onclick="tlMove(${i},-1)" style="border:1px solid #ccc;background:#f5f5f5;border-radius:6px;cursor:pointer;padding:2px 9px;font-size:14px;">⬆️</button>`:''}
+          ${i<window._tlCurrent.length-1?`<button onclick="tlMove(${i},1)" style="border:1px solid #ccc;background:#f5f5f5;border-radius:6px;cursor:pointer;padding:2px 9px;font-size:14px;">⬇️</button>`:''}
+        </div>
+      </div>`).join('')}
+    </div>
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="checkTimeline()">✅ تحقق من الترتيب</button>
+    <div id="tlRes" style="margin-top:14px;"></div>`;
+}
+
+function tlMove(i,dir) {
+  const j=i+dir;
+  [window._tlCurrent[i],window._tlCurrent[j]]=[window._tlCurrent[j],window._tlCurrent[i]];
+  renderTimeline();
+}
+
+function checkTimeline() {
+  const ok=window._tlCurrent.join('|')===window._tlCorrect.join('|');
+  const res=document.getElementById('tlRes');
+  if(ok){ onCorrect(); res.innerHTML='<div class="result success">✅ ممتاز! الترتيب الزمني صحيح تماماً 🎉</div>'; setTimeout(()=>closeGameModal(),2500); }
+  else  { onWrong();   res.innerHTML='<div class="result error">❌ الترتيب غير صحيح، حاول مرة أخرى!</div>'; }
+}
+
+// ===================== RUN =====================
+updateQuestionForm();
+renderStats();
+renderAllQuestions();
+</script>
+</body>
+</html>
